@@ -1,163 +1,205 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="nl">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Pet Care Scheduler</title>
-  <style>
-    :root {
-      font-family: system-ui, sans-serif;
-      color: #17312e;
-      background: #f2f6f4;
-      color-scheme: light;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; }
-    main { max-width: 1100px; margin: auto; padding: 32px 20px; }
-    header, .toolbar, .actions, .task-heading {
-      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
-    }
-    header { justify-content: space-between; margin-bottom: 24px; }
-    h1 { margin: 0 0 6px; font-size: clamp(1.7rem, 4vw, 2.4rem); }
-    h2 { margin-top: 0; font-size: 1.2rem; }
-    p { line-height: 1.5; }
-    .muted, small { color: #58716b; }
-    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
-    .panel, .task {
-      background: white; border: 1px solid #dce5e0;
-      border-radius: 16px; padding: 22px;
-    }
-    .panel { align-self: start; }
-    form { display: grid; gap: 14px; }
-    label { display: grid; gap: 6px; font-size: .9rem; font-weight: 600; }
-    input, select, textarea, button {
-      font: inherit; border: 1px solid #c7d5ce; border-radius: 8px;
-      padding: 10px 12px; min-height: 44px;
-    }
-    input, select, textarea { width: 100%; background: white; color: inherit; }
-    textarea { resize: vertical; }
-    button { cursor: pointer; background: #edf3ef; color: #17312e; font-weight: 600; }
-    button:hover { filter: brightness(.96); }
-    button.primary { background: #216951; color: white; border-color: #216951; }
-    button.danger { color: #a12d37; background: #fff3f3; }
-    :focus-visible { outline: 3px solid #378dca; outline-offset: 3px; }
-    .toolbar { margin-bottom: 16px; }
-    .toolbar > * { flex: 1; min-width: 120px; }
-    #tasks { display: grid; gap: 12px; }
-    .task { padding: 18px; border-left: 5px solid #94b9a5; }
-    .task.overdue { border-left-color: #b83845; }
-    .task.done { opacity: .7; }
-    .task-heading { justify-content: space-between; }
-    .task h3 { margin: 0; font-size: 1.05rem; overflow-wrap: anywhere; }
-    .badge {
-      font-size: .75rem; background: #eaf2ed; border-radius: 30px;
-      padding: 5px 9px; white-space: nowrap;
-    }
-    .task p { margin: 10px 0; overflow-wrap: anywhere; white-space: pre-wrap; }
-    .actions { margin-top: 14px; }
-    .actions button { font-size: .85rem; }
-    .empty { padding: 36px; text-align: center; color: #58716b; }
-    #message { min-height: 24px; margin: 12px 0; }
-    .notice { font-size: .85rem; max-width: 680px; }
-    [hidden] { display: none !important; }
-    @media (max-width: 760px) {
-      .layout { grid-template-columns: 1fr; }
-      main { padding: 20px 14px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dierenzorgplanner</title>
+<style>
+  :root {
+    font-family: system-ui, sans-serif;
+    color: #17312e;
+    background: #f2f6f4;
+    color-scheme: light;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  main { max-width: 1200px; margin: auto; padding: 30px 20px; }
+  header, .actions, .heading {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  }
+  header, .heading { justify-content: space-between; }
+  header { margin-bottom: 24px; }
+  h1 { margin: 0 0 6px; font-size: clamp(1.7rem, 4vw, 2.4rem); }
+  h2 { margin: 0 0 16px; font-size: 1.2rem; }
+  h3 { margin: 0; font-size: 1.05rem; overflow-wrap: anywhere; }
+  p { line-height: 1.5; }
+  .muted, small { color: #58716b; }
+  .layout { display: grid; grid-template-columns: 310px 1fr; gap: 24px; }
+  .panel, .task, .day-card {
+    background: white; border: 1px solid #dce5e0;
+    border-radius: 14px; padding: 20px;
+  }
+  .panel { align-self: start; }
+  form { display: grid; gap: 13px; }
+  label { display: grid; gap: 6px; font-size: .9rem; font-weight: 600; }
+  input, select, textarea, button {
+    font: inherit; border: 1px solid #c7d5ce;
+    border-radius: 8px; padding: 10px; min-height: 44px;
+  }
+  input, select, textarea { width: 100%; background: white; color: inherit; }
+  textarea { resize: vertical; }
+  button { cursor: pointer; background: #edf3ef; color: #17312e; font-weight: 600; }
+  button:hover { filter: brightness(.96); }
+  button.primary { background: #216951; color: white; border-color: #216951; }
+  button.danger { color: #a12d37; background: #fff3f3; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  :focus-visible { outline: 3px solid #378dca; outline-offset: 3px; }
+  .filters {
+    display: grid; grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px; margin-bottom: 20px;
+  }
+  .filters .wide { grid-column: 1 / -1; }
+  #day-cards, #tasks, #history { display: grid; gap: 12px; }
+  #day-cards { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .section { margin-bottom: 28px; }
+  .day-card p { margin: 10px 0; }
+  progress { width: 100%; height: 14px; accent-color: #216951; }
+  .task { border-left: 5px solid #94b9a5; padding: 16px; }
+  .task.overdue { border-left-color: #b83845; }
+  .task.done { background: #f8fbf9; }
+  .task p { margin: 9px 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .badge {
+    font-size: .75rem; background: #eaf2ed;
+    border-radius: 30px; padding: 5px 9px;
+  }
+  .actions { margin-top: 12px; }
+  .actions button { font-size: .85rem; }
+  .empty { padding: 20px; text-align: center; color: #58716b; }
+  #message { min-height: 24px; margin-bottom: 14px; }
+  .notice { font-size: .85rem; }
+  [hidden] { display: none !important; }
+  @media (max-width: 760px) {
+    .layout { grid-template-columns: 1fr; }
+    main { padding: 20px 14px; }
+  }
+</style>
 </head>
 <body>
 <main>
   <header>
     <div>
-      <h1>Pet care, organized.</h1>
-      <div class="muted">Meals, medicine, appointments, and household care.</div>
+      <h1>Dierenzorgplanner</h1>
+      <div class="muted">Voeding, medicatie, afspraken en huishoudelijke zorg.</div>
     </div>
     <div class="actions">
-      <button id="export" type="button">Export backup</button>
-      <button id="import" type="button">Import backup</button>
+      <button id="export" type="button">Back-up exporteren</button>
+      <button id="import" type="button">Back-up importeren</button>
       <input id="file" type="file" accept=".json,application/json" hidden>
     </div>
   </header>
 
+  <div id="message" role="status" aria-live="polite"></div>
+
   <div class="layout">
     <section class="panel" aria-labelledby="form-title">
-      <h2 id="form-title">Add care task</h2>
+      <h2 id="form-title">Zorgtaak toevoegen</h2>
       <form id="form">
-        <label>
-          Task
-          <input name="title" maxlength="120" placeholder="Morning feeding" required>
+        <label>Taak
+          <input name="title" maxlength="120" placeholder="Ochtendvoeding" required>
         </label>
-        <label>
-          Pet
-          <input name="pet" maxlength="60" placeholder="Milo" required>
+        <label>Huisdier
+          <input name="pet" list="pet-options" maxlength="60" required>
         </label>
-        <label>
-          Category
+        <datalist id="pet-options"></datalist>
+        <label>Categorie
           <select name="category">
-            <option>Feeding</option>
-            <option>Medication</option>
-            <option>Vet appointment</option>
-            <option>Household task</option>
+            <option value="Feeding">Voeding</option>
+            <option value="Medication">Medicatie</option>
+            <option value="Vet appointment">Dierenartsafspraak</option>
+            <option value="Household task">Huishoudelijke taak</option>
           </select>
         </label>
-        <label>
-          Date and time
+        <label>Datum en tijd
           <input name="due" type="datetime-local" required>
         </label>
-        <label>
-          Assigned to
-          <input name="owner" maxlength="60" placeholder="Household member" required>
+        <label>Verantwoordelijke
+          <input name="owner" list="owner-options" maxlength="60" required>
         </label>
-        <label>
-          Repeat
+        <datalist id="owner-options"></datalist>
+        <label>Herhaling
           <select name="repeat">
-            <option value="none">Does not repeat</option>
-            <option value="daily">Daily</option>
-            <option value="weekly">Weekly</option>
+            <option value="none">Geen herhaling</option>
+            <option value="daily">Dagelijks</option>
+            <option value="weekly">Wekelijks</option>
           </select>
         </label>
-        <label>
-          Instructions
+        <label>Instructies
           <textarea name="notes" rows="3" maxlength="1000"
-            placeholder="Food amount, prescribed instructions, or appointment details"></textarea>
+            placeholder="Hoeveelheid voeding, voorgeschreven medicatie of afspraakdetails"></textarea>
         </label>
-        <button class="primary" id="submit" type="submit">Add task</button>
-        <button id="cancel" type="button" hidden>Cancel editing</button>
+        <button class="primary" id="submit" type="submit">Taak toevoegen</button>
+        <button id="cancel" type="button" hidden>Bewerken annuleren</button>
       </form>
       <p class="notice muted">
-        Follow your veterinarian's medication instructions.
-        This page does not send background notifications.
+        Volg bij medicatie altijd de instructies van de dierenarts.
+        Deze planner verstuurt geen achtergrondmeldingen.
       </p>
     </section>
 
-    <section aria-label="Care schedule">
-      <div class="toolbar">
-        <input id="search" type="search" placeholder="Search pet, task, or person"
-          aria-label="Search tasks">
-        <select id="filter" aria-label="Filter by category">
-          <option value="">All categories</option>
-          <option>Feeding</option>
-          <option>Medication</option>
-          <option>Vet appointment</option>
-          <option>Household task</option>
-        </select>
-        <select id="status" aria-label="Filter by status">
-          <option value="open">Upcoming and overdue</option>
-          <option value="done">Completed</option>
-          <option value="all">All tasks</option>
-        </select>
+    <div>
+      <div class="filters">
+        <label class="wide">Zoeken in planning
+          <input id="search" type="search" placeholder="Taak, huisdier of persoon">
+        </label>
+        <label>Huisdier
+          <select id="pet-filter"><option value="">Alle huisdieren</option></select>
+        </label>
+        <label>Verantwoordelijke
+          <select id="owner-filter"><option value="">Iedereen</option></select>
+        </label>
+        <label>Categorie
+          <select id="category-filter">
+            <option value="">Alle categorieën</option>
+            <option value="Feeding">Voeding</option>
+            <option value="Medication">Medicatie</option>
+            <option value="Vet appointment">Dierenartsafspraak</option>
+            <option value="Household task">Huishoudelijke taak</option>
+          </select>
+        </label>
+        <label>Status in planning
+          <select id="status-filter">
+            <option value="open">Openstaande taken</option>
+            <option value="done">Afgeronde taken</option>
+            <option value="all">Alle taken</option>
+          </select>
+        </label>
       </div>
-      <div id="summary" class="muted"></div>
-      <div id="message" role="status" aria-live="polite"></div>
-      <div id="tasks"></div>
-    </section>
+
+      <section class="section" aria-labelledby="today-title">
+        <h2 id="today-title">Vandaag per huisdier</h2>
+        <p class="notice muted">
+          Gebaseerd op geplande taken voor vandaag en de filters voor huisdier
+          en verantwoordelijke. Oudere achterstallige taken staan apart vermeld.
+        </p>
+        <div id="day-cards"></div>
+      </section>
+
+      <section class="section" aria-labelledby="schedule-title">
+        <h2 id="schedule-title">Planning</h2>
+        <p id="summary" class="muted"></p>
+        <div id="tasks"></div>
+      </section>
+
+      <section class="section" aria-labelledby="history-title">
+        <h2 id="history-title">Medicatiehistorie</h2>
+        <p class="notice muted">
+          Laatste 50 registraties voor het geselecteerde huisdier en de
+          verantwoordelijke. Het tijdstip is het registratiemoment, niet
+          noodzakelijk het daadwerkelijke toedienmoment. De verantwoordelijke
+          is de toegewezen persoon, niet een geverifieerde uitvoerder.
+        </p>
+        <div id="history"></div>
+      </section>
+    </div>
   </div>
 
   <p class="notice muted">
-    Data stays in this browser. Assignments coordinate care on a shared device,
-    but do not notify people or sync across devices. Export regular backups.
-    Recurring tasks create the next occurrence when completed.
+    Gegevens blijven in deze browser. Gebruik voor dezelfde gegevens dezelfde
+    browser en bestandslocatie. Lokale HTML-opslag kan per browser verschillen.
+    Exporteer regelmatig een back-up. Er is geen synchronisatie tussen apparaten
+    en geen beveiligde medische auditregistratie. Een herhalende taak maakt na
+    afronding de volgende toekomstige taak aan, gemiste herhalingen worden
+    overgeslagen.
   </p>
 </main>
 
@@ -165,37 +207,46 @@
 "use strict";
 
 const KEY = "pet-care-scheduler-v1";
-const categories = [
-  "Feeding", "Medication", "Vet appointment", "Household task"
-];
 const $ = selector => document.querySelector(selector);
 const form = $("#form");
+const categoryNames = {
+  Feeding: "Voeding",
+  Medication: "Medicatie",
+  "Vet appointment": "Dierenartsafspraak",
+  "Household task": "Huishoudelijke taak"
+};
+const repeatNames = { none: "", daily: "Dagelijks", weekly: "Wekelijks" };
 let tasks = [];
 let editingId = null;
+let storageLocked = false;
 
 function announce(text) {
   $("#message").textContent = text;
 }
 
 function validTask(task) {
-  const bounded = (value, max, required = true) =>
-    typeof value === "string" &&
-    value.length <= max &&
+  const text = (value, max, required = true) =>
+    typeof value === "string" && value.length <= max &&
     (!required || value.trim().length > 0);
+  const validDate = value =>
+    typeof value === "string" &&
+    Number.isFinite(new Date(value).getTime());
 
   return task && typeof task === "object" &&
-    bounded(task.id, 100) &&
-    bounded(task.title, 120) &&
-    bounded(task.pet, 60) &&
-    bounded(task.owner, 60) &&
-    bounded(task.notes, 1000, false) &&
-    categories.includes(task.category) &&
+    text(task.id, 100) && text(task.title, 120) &&
+    text(task.pet, 60) && text(task.owner, 60) &&
+    text(task.notes, 1000, false) &&
+    Object.hasOwn(categoryNames, task.category) &&
     ["none", "daily", "weekly"].includes(task.repeat) &&
-    typeof task.due === "string" &&
-    Number.isFinite(new Date(task.due).getTime()) &&
-    (task.completedAt === null ||
-      (typeof task.completedAt === "string" &&
-       Number.isFinite(new Date(task.completedAt).getTime())));
+    validDate(task.due) &&
+    (task.completedAt === null || validDate(task.completedAt));
+}
+
+function validList(value) {
+  return Array.isArray(value) &&
+    value.length <= 5000 &&
+    value.every(validTask) &&
+    new Set(value.map(task => task.id)).size === value.length;
 }
 
 function normalize(task) {
@@ -209,17 +260,34 @@ function normalize(task) {
     notes: task.notes.trim(),
     due: new Date(task.due).toISOString(),
     completedAt: task.completedAt
+      ? new Date(task.completedAt).toISOString() : null
   };
 }
 
-function persist(next) {
+function createId() {
+  if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
+function persist(next, recovery = false) {
+  if (storageLocked && !recovery) {
+    announce("Opslaan is geblokkeerd. Importeer eerst een geldige back-up.");
+    return false;
+  }
+  if (!validList(next)) {
+    announce("Opslaan mislukt. Controleer de gegevens of de limiet van 5000 taken.");
+    return false;
+  }
   try {
     localStorage.setItem(KEY, JSON.stringify(next));
     tasks = next;
+    storageLocked = false;
+    $("#submit").disabled = false;
+    refreshOptions();
     render();
     return true;
   } catch {
-    announce("Could not save. Browser storage may be unavailable or full. Export a backup.");
+    announce("Opslaan mislukt. Browseropslag is niet beschikbaar of vol.");
     return false;
   }
 }
@@ -230,189 +298,299 @@ function localInputValue(date) {
     `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function dayKey(value) {
+  return localInputValue(new Date(value)).slice(0, 10);
+}
+
+function formatDate(value) {
+  return new Date(value).toLocaleString("nl-NL", {
+    dateStyle: "medium", timeStyle: "short"
+  });
+}
+
+function node(tag, text, className) {
+  const element = document.createElement(tag);
+  if (text !== undefined) element.textContent = text;
+  if (className) element.className = className;
+  return element;
+}
+
+function action(label, handler, className) {
+  const button = node("button", label, className);
+  button.type = "button";
+  button.addEventListener("click", handler);
+  return button;
+}
+
 function resetForm() {
   editingId = null;
   form.reset();
   form.elements.due.value = localInputValue(new Date());
-  $("#form-title").textContent = "Add care task";
-  $("#submit").textContent = "Add task";
+  $("#form-title").textContent = "Zorgtaak toevoegen";
+  $("#submit").textContent = "Taak toevoegen";
+  $("#submit").disabled = storageLocked;
   $("#cancel").hidden = true;
 }
 
-function element(tag, text, className) {
-  const node = document.createElement(tag);
-  if (text !== undefined) node.textContent = text;
-  if (className) node.className = className;
-  return node;
+function refreshOptions() {
+  for (const [field, filterId, listId, placeholder] of [
+    ["pet", "#pet-filter", "#pet-options", "Alle huisdieren"],
+    ["owner", "#owner-filter", "#owner-options", "Iedereen"]
+  ]) {
+    const values = [...new Set(tasks.map(task => task[field]))]
+      .sort((a, b) => a.localeCompare(b, "nl"));
+    const filter = $(filterId);
+    const selected = filter.value;
+    filter.replaceChildren(new Option(placeholder, ""));
+    $(listId).replaceChildren();
+    for (const value of values) {
+      filter.add(new Option(value, value));
+      $(listId).append(new Option(value, value));
+    }
+    filter.value = values.includes(selected) ? selected : "";
+  }
 }
 
-function button(label, handler, className) {
-  const node = element("button", label, className);
-  node.type = "button";
-  node.addEventListener("click", handler);
-  return node;
+function scopeTasks() {
+  const pet = $("#pet-filter").value;
+  const owner = $("#owner-filter").value;
+  return tasks.filter(task =>
+    (!pet || task.pet === pet) && (!owner || task.owner === owner));
+}
+
+function renderToday(scoped) {
+  const container = $("#day-cards");
+  container.replaceChildren();
+  const now = new Date();
+  const today = dayKey(now);
+  const pets = [...new Set(scoped.map(task => task.pet))]
+    .sort((a, b) => a.localeCompare(b, "nl"));
+
+  if (!pets.length) {
+    container.append(node("div", "Nog geen huisdieren binnen deze selectie.", "empty panel"));
+    return;
+  }
+
+  for (const pet of pets) {
+    const all = scoped.filter(task => task.pet === pet);
+    const dueToday = all.filter(task => dayKey(task.due) === today);
+    const done = dueToday.filter(task => task.completedAt).length;
+    const lateToday = dueToday.filter(task =>
+      !task.completedAt && new Date(task.due) < now).length;
+    const older = all.filter(task =>
+      !task.completedAt && dayKey(task.due) < today).length;
+    const card = node("article", undefined, "day-card");
+    const progress = node("progress");
+    progress.max = Math.max(dueToday.length, 1);
+    progress.value = done;
+    progress.setAttribute("aria-label", `Voortgang vandaag voor ${pet}`);
+    card.append(
+      node("h3", pet),
+      node("p", `${done} van ${dueToday.length} taken afgerond`),
+      progress,
+      node("p", `${lateToday} vandaag te laat · ${older} eerder achterstallig`, "muted")
+    );
+    const pending = dueToday.filter(task => !task.completedAt)
+      .sort((a, b) => new Date(a.due) - new Date(b.due))[0];
+    if (pending) {
+      card.append(node("p",
+        `Eerstvolgende open taak: ${pending.title} · ${pending.owner}`, "notice"));
+    }
+    container.append(card);
+  }
 }
 
 function editTask(task) {
   editingId = task.id;
-  for (const key of ["title", "pet", "owner", "category", "repeat", "notes"]) {
-    form.elements[key].value = task[key];
+  for (const field of ["title", "pet", "owner", "category", "repeat", "notes"]) {
+    form.elements[field].value = task[field];
   }
   form.elements.due.value = localInputValue(new Date(task.due));
-  $("#form-title").textContent = "Edit care task";
-  $("#submit").textContent = "Save changes";
+  $("#form-title").textContent = "Zorgtaak bewerken";
+  $("#submit").textContent = "Wijzigingen opslaan";
   $("#cancel").hidden = false;
   form.elements.title.focus();
 }
 
-function completeTask(task) {
-  if (task.completedAt) return;
+function completeTask(id) {
+  const task = tasks.find(item => item.id === id);
+  if (!task || task.completedAt) return;
+  if (task.category === "Medication" &&
+      !confirm(`Bevestig dat "${task.title}" voor ${task.pet} is toegediend. Nu registreren?`)) {
+    return;
+  }
 
   const now = new Date();
-  const next = tasks.map(item => item.id === task.id
-    ? { ...item, completedAt: now.toISOString() }
-    : item);
+  const next = tasks.map(item => item.id === id
+    ? { ...item, completedAt: now.toISOString() } : item);
 
   if (task.repeat !== "none") {
     const due = new Date(task.due);
     const interval = task.repeat === "daily" ? 1 : 7;
-
-    // Keep the original local wall-clock time, including across DST changes.
-    // Skip missed occurrences instead of creating a backlog.
     do {
       due.setDate(due.getDate() + interval);
     } while (due <= now);
-
     next.push({
-      ...task,
-      id: crypto.randomUUID(),
-      due: due.toISOString(),
-      completedAt: null
+      ...task, id: createId(), due: due.toISOString(), completedAt: null
     });
   }
 
   if (persist(next)) {
-    if (editingId === task.id) resetForm();
+    if (editingId === id) resetForm();
     announce(task.repeat === "none"
-      ? "Task completed."
-      : "Task completed. Next occurrence scheduled.");
+      ? "Afronding geregistreerd."
+      : "Afronding geregistreerd en volgende taak ingepland.");
   }
 }
 
-function render() {
+function deleteTask(id) {
+  const task = tasks.find(item => item.id === id);
+  if (!task) return;
+  const warning = task.completedAt && task.category === "Medication"
+    ? " Dit verwijdert ook de medicatieregistratie." : "";
+  if (!confirm(`"${task.title}" verwijderen?${warning} Dit kan niet ongedaan worden gemaakt.`)) {
+    return;
+  }
+  if (persist(tasks.filter(item => item.id !== id))) {
+    if (editingId === id) resetForm();
+    announce("Taak verwijderd.");
+  }
+}
+
+function renderSchedule(scoped) {
+  const query = $("#search").value.trim().toLocaleLowerCase("nl");
+  const category = $("#category-filter").value;
+  const status = $("#status-filter").value;
   const now = new Date();
-  const open = tasks.filter(task => !task.completedAt);
-  const overdue = open.filter(task => new Date(task.due) < now).length;
-  $("#summary").textContent = `${open.length} open tasks · ${overdue} overdue`;
+  const visible = scoped.filter(task =>
+    (!category || task.category === category) &&
+    (status === "all" || (status === "done" ? !!task.completedAt : !task.completedAt)) &&
+    [task.title, task.pet, task.owner, task.notes].some(value =>
+      value.toLocaleLowerCase("nl").includes(query))
+  ).sort((a, b) => new Date(a.due) - new Date(b.due));
 
-  const query = $("#search").value.toLowerCase().trim();
-  const category = $("#filter").value;
-  const status = $("#status").value;
-
-  const visible = tasks.filter(task => {
-    const matchesText = [
-      task.title, task.pet, task.owner, task.notes
-    ].some(value => value.toLowerCase().includes(query));
-    const matchesStatus = status === "all" ||
-      (status === "done" ? !!task.completedAt : !task.completedAt);
-    return matchesText && matchesStatus &&
-      (!category || task.category === category);
-  }).sort((a, b) => new Date(a.due) - new Date(b.due));
-
+  const overdue = visible.filter(task =>
+    !task.completedAt && new Date(task.due) < now).length;
+  $("#summary").textContent = `${visible.length} getoonde taken · ${overdue} te laat`;
   const container = $("#tasks");
   container.replaceChildren();
 
   if (!visible.length) {
-    container.append(element("div", "No matching care tasks.", "empty panel"));
-    return;
+    container.append(node("div", "Geen taken die overeenkomen met je filters.", "empty panel"));
   }
 
   for (const task of visible) {
-    const overdue = !task.completedAt && new Date(task.due) < now;
-    const card = element("article", undefined,
-      `task${overdue ? " overdue" : ""}${task.completedAt ? " done" : ""}`);
-    const heading = element("div", undefined, "task-heading");
-    heading.append(
-      element("h3", task.title),
-      element("span", task.category, "badge")
-    );
-    const date = new Date(task.due).toLocaleString(undefined, {
-      dateStyle: "medium", timeStyle: "short"
-    });
+    const late = !task.completedAt && new Date(task.due) < now;
+    const card = node("article", undefined,
+      `task${late ? " overdue" : ""}${task.completedAt ? " done" : ""}`);
+    const heading = node("div", undefined, "heading");
+    heading.append(node("h3", task.title), node("span", categoryNames[task.category], "badge"));
     card.append(
       heading,
-      element("p", `${task.pet} · Assigned to ${task.owner}`),
-      element("p",
-        `${task.completedAt ? "Completed · " : overdue ? "Overdue · " : ""}${date}` +
-        `${task.repeat !== "none" ? ` · Repeats ${task.repeat}` : ""}`,
+      node("p", `${task.pet} · Verantwoordelijke: ${task.owner}`),
+      node("p",
+        `${task.completedAt ? "Afgerond" : late ? "Te laat" : "Gepland"} · ` +
+        `${formatDate(task.due)}${task.repeat !== "none" ? ` · ${repeatNames[task.repeat]}` : ""}`,
         "muted")
     );
-    if (task.notes) card.append(element("p", task.notes));
+    if (task.notes) card.append(node("p", task.notes));
     if (task.completedAt) {
-      card.append(element("small",
-        `Completed ${new Date(task.completedAt).toLocaleString()}`));
+      card.append(node("p", `Afronding geregistreerd: ${formatDate(task.completedAt)}`, "notice muted"));
     }
-
-    const actions = element("div", undefined, "actions");
+    const actions = node("div", undefined, "actions");
     if (!task.completedAt) {
       actions.append(
-        button("Mark complete", () => completeTask(task), "primary"),
-        button("Edit", () => editTask(task))
+        action(task.category === "Medication" ? "Toediening registreren" : "Afronden",
+          () => completeTask(task.id), "primary"),
+        action("Bewerken", () => editTask(task))
       );
     }
-    actions.append(button("Delete", () => {
-      if (!confirm(`Delete "${task.title}"? This cannot be undone.`)) return;
-      if (persist(tasks.filter(item => item.id !== task.id))) {
-        if (editingId === task.id) resetForm();
-        announce("Task deleted.");
-      }
-    }, "danger"));
+    actions.append(action("Verwijderen", () => deleteTask(task.id), "danger"));
     card.append(actions);
     container.append(card);
   }
+}
+
+function renderHistory(scoped) {
+  const history = scoped.filter(task =>
+    task.category === "Medication" && task.completedAt)
+    .sort((a, b) => new Date(b.completedAt) - new Date(a.completedAt));
+  const container = $("#history");
+  container.replaceChildren();
+
+  if (!history.length) {
+    container.append(node("div", "Nog geen medicatietoedieningen geregistreerd.", "empty panel"));
+    return;
+  }
+  for (const task of history.slice(0, 50)) {
+    const card = node("article", undefined, "task done");
+    card.append(
+      node("h3", `${task.pet} · ${task.title}`),
+      node("p", `Geregistreerd: ${formatDate(task.completedAt)}`),
+      node("p", `Gepland: ${formatDate(task.due)} · Toegewezen aan: ${task.owner}`, "notice muted")
+    );
+    if (task.notes) card.append(node("p", task.notes));
+    container.append(card);
+  }
+}
+
+function render() {
+  const scoped = scopeTasks();
+  renderToday(scoped);
+  renderSchedule(scoped);
+  renderHistory(scoped);
 }
 
 form.addEventListener("submit", event => {
   event.preventDefault();
   const values = Object.fromEntries(new FormData(form));
   const existing = tasks.find(task => task.id === editingId);
-  const task = {
-    ...values,
-    id: editingId || crypto.randomUUID(),
-    due: values.due,
-    completedAt: existing?.completedAt || null
-  };
-
-  if (!validTask(task)) {
-    announce("Enter valid task details, including a date and time.");
+  if (editingId && (!existing || existing.completedAt)) {
+    announce("Deze taak kan niet meer worden bewerkt.");
+    resetForm();
     return;
   }
-
-  const normalized = normalize(task);
+  const task = {
+    ...values, id: editingId || createId(),
+    completedAt: existing?.completedAt || null
+  };
+  if (!validTask(task)) {
+    announce("Vul geldige taakgegevens en een geldige datum en tijd in.");
+    return;
+  }
+  const nextTask = normalize(task);
   const next = editingId
-    ? tasks.map(item => item.id === editingId ? normalized : item)
-    : [...tasks, normalized];
+    ? tasks.map(item => item.id === editingId ? nextTask : item)
+    : [...tasks, nextTask];
 
   if (persist(next)) {
-    announce(editingId ? "Task updated." : "Task added.");
+    announce(editingId ? "Taak bijgewerkt." : "Taak toegevoegd.");
     resetForm();
   }
 });
 
 $("#cancel").addEventListener("click", resetForm);
-for (const selector of ["#search", "#filter", "#status"]) {
+for (const selector of [
+  "#search", "#pet-filter", "#owner-filter", "#category-filter", "#status-filter"
+]) {
   $(selector).addEventListener("input", render);
 }
 
 $("#export").addEventListener("click", () => {
-  const blob = new Blob([
-    JSON.stringify({ version: 1, tasks }, null, 2)
-  ], { type: "application/json" });
+  if (storageLocked) {
+    announce("De oorspronkelijke opslag kon niet worden gelezen. Er wordt geen lege back-up geëxporteerd.");
+    return;
+  }
+  const blob = new Blob([JSON.stringify({ version: 1, tasks }, null, 2)], {
+    type: "application/json"
+  });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `pet-care-${localInputValue(new Date()).slice(0, 10)}.json`;
+  link.download = `dierenzorg-${dayKey(new Date())}.json`;
+  document.body.append(link);
   link.click();
+  link.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
@@ -421,47 +599,48 @@ $("#file").addEventListener("change", async event => {
   const file = event.target.files[0];
   if (!file) return;
   try {
-    if (file.size > 2_000_000) throw new Error("File exceeds the 2 MB limit.");
+    if (file.size > 2_000_000) throw new Error("Het bestand is groter dan 2 MB.");
     const data = JSON.parse(await file.text());
-    if (data.version !== 1 || !Array.isArray(data.tasks) ||
-        data.tasks.length > 5000 || !data.tasks.every(validTask) ||
-        new Set(data.tasks.map(task => task.id)).size !== data.tasks.length) {
-      throw new Error("Invalid scheduler backup.");
+    if (data.version !== 1 || !validList(data.tasks)) {
+      throw new Error("Ongeldige back-up.");
     }
-    if (!confirm(`Replace all current tasks with ${data.tasks.length} imported tasks?`)) {
+    if (!confirm(`Alle opgeslagen taken vervangen door ${data.tasks.length} geïmporteerde taken?`)) {
       return;
     }
-    if (persist(data.tasks.map(normalize))) {
+    if (persist(data.tasks.map(normalize), true)) {
       resetForm();
-      announce("Backup imported.");
+      announce("Back-up geïmporteerd.");
     }
   } catch (error) {
-    announce(`Import failed: ${error.message}`);
+    announce(`Importeren mislukt: ${error.message}`);
   } finally {
     event.target.value = "";
   }
 });
 
 window.addEventListener("storage", event => {
-  if (event.key === KEY) location.reload();
+  if (event.key === KEY || event.key === null) {
+    // Avoid silently overwriting changes from another tab.
+    storageLocked = true;
+    $("#submit").disabled = true;
+    announce("Gegevens zijn in een ander tabblad gewijzigd. Herlaad deze pagina voordat je verdergaat.");
+  }
 });
 
 try {
   const raw = localStorage.getItem(KEY);
   if (raw !== null) {
     const stored = JSON.parse(raw);
-    if (!Array.isArray(stored) || !stored.every(validTask)) {
-      throw new Error("Invalid saved data");
-    }
+    if (!validList(stored)) throw new Error("Ongeldige opslag");
     tasks = stored.map(normalize);
   }
 } catch {
-  announce("Saved data could not be loaded. Import a backup before making changes.");
-  // Prevent accidental overwrite of unreadable saved data.
-  form.querySelector("button[type=submit]").disabled = true;
+  storageLocked = true;
+  announce("Opgeslagen gegevens konden niet worden gelezen. Importeer een geldige back-up. De bestaande opslag is niet overschreven.");
 }
 
 resetForm();
+refreshOptions();
 render();
 setInterval(render, 60_000);
 </script>
