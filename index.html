@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pet Care Scheduler</title>
+  <style>
+    :root {
+      font-family: system-ui, sans-serif;
+      color: #17312e;
+      background: #f2f6f4;
+      color-scheme: light;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    main { max-width: 1100px; margin: auto; padding: 32px 20px; }
+    header, .toolbar, .actions, .task-heading {
+      display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    }
+    header { justify-content: space-between; margin-bottom: 24px; }
+    h1 { margin: 0 0 6px; font-size: clamp(1.7rem, 4vw, 2.4rem); }
+    h2 { margin-top: 0; font-size: 1.2rem; }
+    p { line-height: 1.5; }
+    .muted, small { color: #58716b; }
+    .layout { display: grid; grid-template-columns: 320px 1fr; gap: 24px; }
+    .panel, .task {
+      background: white; border: 1px solid #dce5e0;
+      border-radius: 16px; padding: 22px;
+    }
+    .panel { align-self: start; }
+    form { display: grid; gap: 14px; }
+    label { display: grid; gap: 6px; font-size: .9rem; font-weight: 600; }
+    input, select, textarea, button {
+      font: inherit; border: 1px solid #c7d5ce; border-radius: 8px;
+      padding: 10px 12px; min-height: 44px;
+    }
+    input, select, textarea { width: 100%; background: white; color: inherit; }
+    textarea { resize: vertical; }
+    button { cursor: pointer; background: #edf3ef; color: #17312e; font-weight: 600; }
+    button:hover { filter: brightness(.96); }
+    button.primary { background: #216951; color: white; border-color: #216951; }
+    button.danger { color: #a12d37; background: #fff3f3; }
+    :focus-visible { outline: 3px solid #378dca; outline-offset: 3px; }
+    .toolbar { margin-bottom: 16px; }
+    .toolbar > * { flex: 1; min-width: 120px; }
+    #tasks { display: grid; gap: 12px; }
+    .task { padding: 18px; border-left: 5px solid #94b9a5; }
+    .task.overdue { border-left-color: #b83845; }
+    .task.done { opacity: .7; }
+    .task-heading { justify-content: space-between; }
+    .task h3 { margin: 0; font-size: 1.05rem; overflow-wrap: anywhere; }
+    .badge {
+      font-size: .75rem; background: #eaf2ed; border-radius: 30px;
+      padding: 5px 9px; white-space: nowrap;
+    }
+    .task p { margin: 10px 0; overflow-wrap: anywhere; white-space: pre-wrap; }
+    .actions { margin-top: 14px; }
+    .actions button { font-size: .85rem; }
+    .empty { padding: 36px; text-align: center; color: #58716b; }
+    #message { min-height: 24px; margin: 12px 0; }
+    .notice { font-size: .85rem; max-width: 680px; }
+    [hidden] { display: none !important; }
+    @media (max-width: 760px) {
+      .layout { grid-template-columns: 1fr; }
+      main { padding: 20px 14px; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>Pet care, organized.</h1>
+      <div class="muted">Meals, medicine, appointments, and household care.</div>
+    </div>
+    <div class="actions">
+      <button id="export" type="button">Export backup</button>
+      <button id="import" type="button">Import backup</button>
+      <input id="file" type="file" accept=".json,application/json" hidden>
+    </div>
+  </header>
+
+  <div class="layout">
+    <section class="panel" aria-labelledby="form-title">
+      <h2 id="form-title">Add care task</h2>
+      <form id="form">
+        <label>
+          Task
+          <input name="title" maxlength="120" placeholder="Morning feeding" required>
+        </label>
+        <label>
+          Pet
+          <input name="pet" maxlength="60" placeholder="Milo" required>
+        </label>
+        <label>
+          Category
+          <select name="category">
+            <option>Feeding</option>
+            <option>Medication</option>
+            <option>Vet appointment</option>
+            <option>Household task</option>
+          </select>
+        </label>
+        <label>
+          Date and time
+          <input name="due" type="datetime-local" required>
+        </label>
+        <label>
+          Assigned to
+          <input name="owner" maxlength="60" placeholder="Household member" required>
+        </label>
+        <label>
+          Repeat
+          <select name="repeat">
+            <option value="none">Does not repeat</option>
+            <option value="daily">Daily</option>
+            <option value="weekly">Weekly</option>
+          </select>
+        </label>
+        <label>
+          Instructions
+          <textarea name="notes" rows="3" maxlength="1000"
+            placeholder="Food amount, prescribed instructions, or appointment details"></textarea>
+        </label>
+        <button class="primary" id="submit" type="submit">Add task</button>
+        <button id="cancel" type="button" hidden>Cancel editing</button>
+      </form>
+      <p class="notice muted">
+        Follow your veterinarian's medication instructions.
+        This page does not send background notifications.
+      </p>
+    </section>
+
+    <section aria-label="Care schedule">
+      <div class="toolbar">
+        <input id="search" type="search" placeholder="Search pet, task, or person"
+          aria-label="Search tasks">
+        <select id="filter" aria-label="Filter by category">
+          <option value="">All categories</option>
+          <option>Feeding</option>
+          <option>Medication</option>
+          <option>Vet appointment</option>
+          <option>Household task</option>
+        </select>
+        <select id="status" aria-label="Filter by status">
+          <option value="open">Upcoming and overdue</option>
+          <option value="done">Completed</option>
+          <option value="all">All tasks</option>
+        </select>
+      </div>
+      <div id="summary" class="muted"></div>
+      <div id="message" role="status" aria-live="polite"></div>
+      <div id="tasks"></div>
+    </section>
+  </div>
+
+  <p class="notice muted">
+    Data stays in this browser. Assignments coordinate care on a shared device,
+    but do not notify people or sync across devices. Export regular backups.
+    Recurring tasks create the next occurrence when completed.
+  </p>
+</main>
+
+<script>
+"use strict";
+
+const KEY = "pet-care-scheduler-v1";
+const categories = [
+  "Feeding", "Medication", "Vet appointment", "Household task"
+];
+const $ = selector => document.querySelector(selector);
+const form = $("#form");
+let tasks = [];
+let editingId = null;
+
+function announce(text) {
+  $("#message").textContent = text;
+}
+
+function validTask(task) {
+  const bounded = (value, max, required = true) =>
+    typeof value === "string" &&
+    value.length <= max &&
+    (!required || value.trim().length > 0);
+
+  return task && typeof task === "object" &&
+    bounded(task.id, 100) &&
+    bounded(task.title, 120) &&
+    bounded(task.pet, 60) &&
+    bounded(task.owner, 60) &&
+    bounded(task.notes, 1000, false) &&
+    categories.includes(task.category) &&
+    ["none", "daily", "weekly"].includes(task.repeat) &&
+    typeof task.due === "string" &&
+    Number.isFinite(new Date(task.due).getTime()) &&
+    (task.completedAt === null ||
+      (typeof task.completedAt === "string" &&
+       Number.isFinite(new Date(task.completedAt).getTime())));
+}
+
+function normalize(task) {
+  return {
+    id: task.id,
+    title: task.title.trim(),
+    pet: task.pet.trim(),
+    owner: task.owner.trim(),
+    category: task.category,
+    repeat: task.repeat,
+    notes: task.notes.trim(),
+    due: new Date(task.due).toISOString(),
+    completedAt: task.completedAt
+  };
+}
+
+function persist(next) {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(next));
+    tasks = next;
+    render();
+    return true;
+  } catch {
+    announce("Could not save. Browser storage may be unavailable or full. Export a backup.");
+    return false;
+  }
+}
+
+function localInputValue(date) {
+  const pad = value => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}` +
+    `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+function resetForm() {
+  editingId = null;
+  form.reset();
+  form.elements.due.value = localInputValue(new Date());
+  $("#form-title").textContent = "Add care task";
+  $("#submit").textContent = "Add task";
+  $("#cancel").hidden = true;
+}
+
+function element(tag, text, className) {
+  const node = document.createElement(tag);
+  if (text !== undefined) node.textContent = text;
+  if (className) node.className = className;
+  return node;
+}
+
+function button(label, handler, className) {
+  const node = element("button", label, className);
+  node.type = "button";
+  node.addEventListener("click", handler);
+  return node;
+}
+
+function editTask(task) {
+  editingId = task.id;
+  for (const key of ["title", "pet", "owner", "category", "repeat", "notes"]) {
+    form.elements[key].value = task[key];
+  }
+  form.elements.due.value = localInputValue(new Date(task.due));
+  $("#form-title").textContent = "Edit care task";
+  $("#submit").textContent = "Save changes";
+  $("#cancel").hidden = false;
+  form.elements.title.focus();
+}
+
+function completeTask(task) {
+  if (task.completedAt) return;
+
+  const now = new Date();
+  const next = tasks.map(item => item.id === task.id
+    ? { ...item, completedAt: now.toISOString() }
+    : item);
+
+  if (task.repeat !== "none") {
+    const due = new Date(task.due);
+    const interval = task.repeat === "daily" ? 1 : 7;
+
+    // Keep the original local wall-clock time, including across DST changes.
+    // Skip missed occurrences instead of creating a backlog.
+    do {
+      due.setDate(due.getDate() + interval);
+    } while (due <= now);
+
+    next.push({
+      ...task,
+      id: crypto.randomUUID(),
+      due: due.toISOString(),
+      completedAt: null
+    });
+  }
+
+  if (persist(next)) {
+    if (editingId === task.id) resetForm();
+    announce(task.repeat === "none"
+      ? "Task completed."
+      : "Task completed. Next occurrence scheduled.");
+  }
+}
+
+function render() {
+  const now = new Date();
+  const open = tasks.filter(task => !task.completedAt);
+  const overdue = open.filter(task => new Date(task.due) < now).length;
+  $("#summary").textContent = `${open.length} open tasks · ${overdue} overdue`;
+
+  const query = $("#search").value.toLowerCase().trim();
+  const category = $("#filter").value;
+  const status = $("#status").value;
+
+  const visible = tasks.filter(task => {
+    const matchesText = [
+      task.title, task.pet, task.owner, task.notes
+    ].some(value => value.toLowerCase().includes(query));
+    const matchesStatus = status === "all" ||
+      (status === "done" ? !!task.completedAt : !task.completedAt);
+    return matchesText && matchesStatus &&
+      (!category || task.category === category);
+  }).sort((a, b) => new Date(a.due) - new Date(b.due));
+
+  const container = $("#tasks");
+  container.replaceChildren();
+
+  if (!visible.length) {
+    container.append(element("div", "No matching care tasks.", "empty panel"));
+    return;
+  }
+
+  for (const task of visible) {
+    const overdue = !task.completedAt && new Date(task.due) < now;
+    const card = element("article", undefined,
+      `task${overdue ? " overdue" : ""}${task.completedAt ? " done" : ""}`);
+    const heading = element("div", undefined, "task-heading");
+    heading.append(
+      element("h3", task.title),
+      element("span", task.category, "badge")
+    );
+    const date = new Date(task.due).toLocaleString(undefined, {
+      dateStyle: "medium", timeStyle: "short"
+    });
+    card.append(
+      heading,
+      element("p", `${task.pet} · Assigned to ${task.owner}`),
+      element("p",
+        `${task.completedAt ? "Completed · " : overdue ? "Overdue · " : ""}${date}` +
+        `${task.repeat !== "none" ? ` · Repeats ${task.repeat}` : ""}`,
+        "muted")
+    );
+    if (task.notes) card.append(element("p", task.notes));
+    if (task.completedAt) {
+      card.append(element("small",
+        `Completed ${new Date(task.completedAt).toLocaleString()}`));
+    }
+
+    const actions = element("div", undefined, "actions");
+    if (!task.completedAt) {
+      actions.append(
+        button("Mark complete", () => completeTask(task), "primary"),
+        button("Edit", () => editTask(task))
+      );
+    }
+    actions.append(button("Delete", () => {
+      if (!confirm(`Delete "${task.title}"? This cannot be undone.`)) return;
+      if (persist(tasks.filter(item => item.id !== task.id))) {
+        if (editingId === task.id) resetForm();
+        announce("Task deleted.");
+      }
+    }, "danger"));
+    card.append(actions);
+    container.append(card);
+  }
+}
+
+form.addEventListener("submit", event => {
+  event.preventDefault();
+  const values = Object.fromEntries(new FormData(form));
+  const existing = tasks.find(task => task.id === editingId);
+  const task = {
+    ...values,
+    id: editingId || crypto.randomUUID(),
+    due: values.due,
+    completedAt: existing?.completedAt || null
+  };
+
+  if (!validTask(task)) {
+    announce("Enter valid task details, including a date and time.");
+    return;
+  }
+
+  const normalized = normalize(task);
+  const next = editingId
+    ? tasks.map(item => item.id === editingId ? normalized : item)
+    : [...tasks, normalized];
+
+  if (persist(next)) {
+    announce(editingId ? "Task updated." : "Task added.");
+    resetForm();
+  }
+});
+
+$("#cancel").addEventListener("click", resetForm);
+for (const selector of ["#search", "#filter", "#status"]) {
+  $(selector).addEventListener("input", render);
+}
+
+$("#export").addEventListener("click", () => {
+  const blob = new Blob([
+    JSON.stringify({ version: 1, tasks }, null, 2)
+  ], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `pet-care-${localInputValue(new Date()).slice(0, 10)}.json`;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+$("#import").addEventListener("click", () => $("#file").click());
+$("#file").addEventListener("change", async event => {
+  const file = event.target.files[0];
+  if (!file) return;
+  try {
+    if (file.size > 2_000_000) throw new Error("File exceeds the 2 MB limit.");
+    const data = JSON.parse(await file.text());
+    if (data.version !== 1 || !Array.isArray(data.tasks) ||
+        data.tasks.length > 5000 || !data.tasks.every(validTask) ||
+        new Set(data.tasks.map(task => task.id)).size !== data.tasks.length) {
+      throw new Error("Invalid scheduler backup.");
+    }
+    if (!confirm(`Replace all current tasks with ${data.tasks.length} imported tasks?`)) {
+      return;
+    }
+    if (persist(data.tasks.map(normalize))) {
+      resetForm();
+      announce("Backup imported.");
+    }
+  } catch (error) {
+    announce(`Import failed: ${error.message}`);
+  } finally {
+    event.target.value = "";
+  }
+});
+
+window.addEventListener("storage", event => {
+  if (event.key === KEY) location.reload();
+});
+
+try {
+  const raw = localStorage.getItem(KEY);
+  if (raw !== null) {
+    const stored = JSON.parse(raw);
+    if (!Array.isArray(stored) || !stored.every(validTask)) {
+      throw new Error("Invalid saved data");
+    }
+    tasks = stored.map(normalize);
+  }
+} catch {
+  announce("Saved data could not be loaded. Import a backup before making changes.");
+  // Prevent accidental overwrite of unreadable saved data.
+  form.querySelector("button[type=submit]").disabled = true;
+}
+
+resetForm();
+render();
+setInterval(render, 60_000);
+</script>
+</body>
+</html>
